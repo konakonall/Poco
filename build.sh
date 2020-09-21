@@ -34,7 +34,7 @@ echo
 #===============================================================================
 
 POCO_VER=$1
-POCO_DIR=${PWD}/Poco/poco-$POCO_VER
+POCO_DIR=${PWD}/../../poco
 IOS_VER=$2
 
 BUILD=$3
