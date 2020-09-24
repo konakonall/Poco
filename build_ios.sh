@@ -60,6 +60,15 @@ IPHONESIM_BINARY_RANLIB=`xcrun --sdk iphonesimulator -find ranlib`
 FRAMEWORK_NAME=poco
 LIBRARY_NAME=libpoco.a
 
+CURRENT_DIR=${PWD}
+FRAMEWORKDIR=$CURRENT_DIR/Build/iOS
+
+rm -rf $FRAMEWORKDIR
+witeMessage "Framework: Setting up directories..."
+mkdir -p $FRAMEWORKDIR
+mkdir -p $FRAMEWORKDIR/include
+mkdir -p $FRAMEWORKDIR/lib
+
 buildFramework()
 {
 DEBUG=$1
@@ -74,25 +83,11 @@ echo "You need to choose DEBUG or RELEASE as first param to buildFramework()"
 exit 1
 fi
 
-CURRENT_DIR=${PWD}
-FRAMEWORKDIR=$2/iOS/framework
-
 #PATH_TO_LIBS_i386=$3
-PATH_TO_LIBS_x86_64=$3
+PATH_TO_LIBS_x86_64=$2
 #PATH_TO_LIBS_ARM7=$5
 #PATH_TO_LIBS_ARM7s=$6
-PATH_TO_LIBS_ARM64=$4
-
-FRAMEWORK_BUNDLE=$FRAMEWORKDIR/$FRAMEWORK_NAME
-
-rm -rf $FRAMEWORK_BUNDLE
-
-witeMessage "Framework: Creating $FRAMEWORK_NAME framework"
-
-witeMessage "Framework: Setting up directories..."
-mkdir -p $FRAMEWORK_BUNDLE
-mkdir -p $FRAMEWORK_BUNDLE/include
-mkdir -p $FRAMEWORK_BUNDLE/lib
+PATH_TO_LIBS_ARM64=$3
 
 witeMessage "Decomposing each architecture's .a files"
 for file in {Foundation$DEBUG,Util$DEBUG,XML$DEBUG,Net$DEBUG,NetSSL$DEBUG,Crypto$DEBUG,JSON$DEBUG}
@@ -140,7 +135,7 @@ done
 
 cd $CURRENT_DIR
 
-LIBRARY_INSTALL_NAME=$FRAMEWORK_BUNDLE/lib/$LIBRARY_NAME
+LIBRARY_INSTALL_NAME=$FRAMEWORKDIR/lib/$LIBRARY_NAME
 
 xcrun -sdk iphoneos lipo \
 -create \
@@ -155,7 +150,7 @@ $IPHONEOS_BINARY_RANLIB "$LIBRARY_INSTALL_NAME"
 witeMessage "Framework: Copying includes..."
 for i in {Foundation,Util,XML,Net,NetSSL_OpenSSL,Crypto,JSON}
 do
-cp -r $POCO/$i/include/*  $FRAMEWORK_BUNDLE/include
+cp -r $POCO/$i/include/*  $FRAMEWORKDIR/include
 done
 
 doneSection
@@ -166,6 +161,8 @@ doneSection
 cd $POCO
 
 $ENABLE_BYTECODE && export CXXFLAGS2="-fembed-bitcode"
+
+make clean
 
 ./configure \
 --include-path=/usr/local/opt/openssl@1.1/include \
@@ -190,4 +187,4 @@ make -j32 POCO_TARGET_OSARCH=x86_64 IPHONE_SDK_VERSION_MIN="$IPHONE_SDK_VERSION"
 #make -j32 POCO_TARGET_OSARCH=armv7s IPHONE_SDK_VERSION_MIN="$IPHONE_SDK_VERSION" POCO_FLAGS="$CXXFLAGS2"
 make -j32 POCO_TARGET_OSARCH=arm64 IPHONE_SDK_VERSION_MIN="$IPHONE_SDK_VERSION" POCO_FLAGS="$CXXFLAGS2"
 
-buildFramework 'RELEASE' ${PWD}/lib `pwd`/lib/iPhoneSimulator/$SIMULATOR_ARCH64 `pwd`/lib/iPhoneOS/$iPhoneARCH64
+buildFramework 'RELEASE' `pwd`/lib/iPhoneSimulator/$SIMULATOR_ARCH64 `pwd`/lib/iPhoneOS/$iPhoneARCH64
